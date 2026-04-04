@@ -1,0 +1,66 @@
+
+1、大语言模型的调用：ChatOpenAI() 、OpenAI()
+
+2、提示词模板 ---> 提示词工程
+PromptTemplate 、ChatPromptTemplate 、FewShotPromptTemplate等
+
+3、输出解析器的使用：JsonOutputParser 、StrOutputParser等
+
+4、Chain的使用：LLMChain、SequentialChain; | 、create_sql_query_chain 等
+
+5、使用记忆，给大模型提供上下文：ChatMessageHistory 、ConversationBufferMemory、
+ConversationBufferWindowMemory、ConversationSummaryMemory、ConversationSummaryBufferMemory
+
+6、工具的创建、工具的使用 （为Agent的使用做准备）
+
+7、Agent的使用：Agent ---> AgentExecutor ---> LangGraph
+
+传统的方式（工具的调用、memory的使用）：(不需要显式的声明提示词模板）
+    agent : AgentType.XXX
+    agent_executor = initialize_agent(llm=llm,agent=agent,tools=tools,memory=memory)
+
+通用的方式（工具的调用、memory的使用）：
+    agent : create_xxx_agent(llm=llm,tools=tools,prompt=prompt)
+    agent_executor = AgentExecutor(agent=agent,tools=tools,memory=memory)
+
+8、RAG的使用（数据的向量化存储）
+流程：XxxLoader ---> list[Document] ---> XxxSplitter ---> OpenAIEmbeddings() -->
+     Chroma / FAISS ---> Retriever
+
+
+RAG的优缺点
+RAG的优点
+1）相比提示词工程，RAG有 更丰富的上下文和数据样本 ，可以不需要用户提供过多的背景描述，就能生
+成比较符合用户预期的答案。
+2）相比于模型微调，RAG可以提升问答内容的 时效性 和 可靠性
+3）在一定程度上保护了业务数据的 隐私性 。
+RAG的缺点
+1）由于每次问答都涉及外部系统数据检索，因此RAG的 响应时延 相对较高。
+2）引用的外部知识数据会 消耗大量的模型Token 资源。
+
+
+在大模型开发里，token与字符之间**没有精确的固定换算关系**，因为这完全取决于模型自身的“分词器”（Tokenizer）如何切分文本。
+
+所以，这里提供的换算比例，都只是基于经验得出的**估算值**，在实际应用中一定会有偏差。
+
+### 🤖 主流大模型 Token 估算参考
+
+**1. 海外模型**
+
+*   **OpenAI (GPT系列)**：1个汉字≈1.5-2个token[reference:0][reference:1]；1个英文字符≈0.25-0.33个token[reference:2]。示例：“1000汉字” 约需 1500-2000 tokens[reference:3]。
+*   **Anthropic (Claude系列)**：1个汉字≈1.5-2个token[reference:4]；1个英文字符≈0.25个token[reference:5]。示例：“1000汉字” 约需 1500-2000 tokens[reference:6]。
+
+**2. 国内模型**
+
+*   **通义千问 (Qwen)**：1个汉字≈1个token[reference:7][reference:8]；1个英文字符≈0.25-0.33个token[reference:9]。
+*   **百度文心一言**：1个汉字≈1-2个token[reference:10]；1个英文字符≈0.5个token[reference:11]。
+*   **腾讯混元**：1个汉字≈1.8个token[reference:12]；数据未找到。
+
+### 💡 开发中的实用建议
+
+估算只是为了心里有数，但在实际开发中，最重要的是精确计算，以免出现意外。
+
+*   **精确计算**：切忌手工估算。务必使用模型官方提供的 **token 计算器** 或其开源的 **tokenizer 库**（例如 OpenAI 的 `tiktoken`[reference:13]），对每一段输入输出进行精确统计。
+*   **中文更“贵”**：总体而言，处理相同信息量的中英文内容，中文消耗的token大约是英文的 **2倍**[reference:14]。这在成本估算和上下文长度规划时需要特别注意。
+
+总的来说，Token作为大模型内部计量的核心单位，理解它的运作机制是你进行成本控制和应用开发的重要基础。除了基础换算，你是否也想了解它具体是如何影响API费用计算的呢？
